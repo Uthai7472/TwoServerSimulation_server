@@ -2,6 +2,7 @@ const mqtt = require('mqtt');
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const cors = require('cors');
 
 // MQTT broker details
 const MQTT_BROKER = "mqtt://test.mosquitto.org"; // Replace with your broker URL
@@ -10,7 +11,13 @@ const MQTT_TOPIC = "my/random/topic";
 // Create an Express app
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    // origin: 'http://localhost:5173', // Replace with your React app's URL
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 
 // Variable to store the latest message
 let latestMessage = "";
@@ -33,6 +40,11 @@ client.on('message', (topic, message) => {
 io.on('connection', (socket) => {
   console.log('Client connected');
 });
+
+// Enable CORS
+app.use(cors({
+  // origin: 'http://localhost:5173'
+}));
 
 // HTTP endpoint to send the latest message
 app.get('/latest-message', (req, res) => {
