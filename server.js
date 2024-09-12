@@ -1,27 +1,23 @@
 const mqtt = require('mqtt');
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
 
 // MQTT broker details
-const MQTT_BROKER = "test.mosquitto.org";
+const MQTT_BROKER = "mqtt://test.mosquitto.org"; // Replace with your broker URL
 const MQTT_TOPIC = "my/random/topic";
 
-// MQTT client setup
-const client = mqtt.connect(`mqtt://${MQTT_BROKER}`);
-
-// React.js client connection
-const express = require('express');
+// Create an Express app
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const server = http.createServer(app);
+const io = socketIo(server);
 
-let randomValue;
+// Variable to store the latest message
+let latestMessage = "";
 
-app.use(express.json());
+// Connect to the MQTT broker
+const client = mqtt.connect(MQTT_BROKER);
 
-app.get('/', (req, res) => {
-  res.send(`Random value : ${randomValue}`);
-});
-
-// Handle MQTT messages
 client.on('connect', () => {
   console.log('Connected to MQTT broker');
   client.subscribe(MQTT_TOPIC);
@@ -29,15 +25,21 @@ client.on('connect', () => {
 
 client.on('message', (topic, message) => {
   console.log(`Received message: ${message.toString()}`);
-  randomValue = message.toString();
-  io.emit('mqtt-data', message.toString());
+  latestMessage = message.toString(); // Store the latest message
+  io.emit('mqtt-data', latestMessage); // Emit to Socket.IO clients
 });
 
-// Set up Socket.IO for real-time communication with React.js client
+// Set up Socket.IO for real-time communication
 io.on('connection', (socket) => {
-  console.log('React.js client connected');
+  console.log('Client connected');
 });
 
-http.listen(3000, () => {
+// HTTP endpoint to send the latest message
+app.get('/latest-message', (req, res) => {
+  res.send({ message: latestMessage }); // Send the latest message as a JSON response
+});
+
+// Start the server
+server.listen(3000, () => {
   console.log('Node.js server listening on port 3000');
 });
