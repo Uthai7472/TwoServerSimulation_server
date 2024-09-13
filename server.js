@@ -3,7 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
   cors: {
-    origin: ['https://two-server-simulation-client.vercel.app/', 'http://localhost:5173'],
+    origin: ['https://two-server-simulation-client.vercel.app', 'http://localhost:5173'],
     methods: ['GET', 'POST'],
     allowedHeaders: ['content-type']
   }
