@@ -1,32 +1,33 @@
 const express = require('express');
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
-  cors: {
-    origin: ['https://two-server-simulation-client.vercel.app', 'http://localhost:5173'],
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['content-type']
-  }
-});
-const port = process.env.PORT || 3000;
 const cors = require('cors');
+const port = 3000;
 
+let sensorData;
+
+// Middleware to parse JSON data
+app.use(express.json());
 app.use(cors());
 
-io.on('connection', (socket) => {
-  console.log('A Raspberry Pi connected');
+app.post('/api/data', (req, res) => {
+  sensorData = req.body;
+  console.log('Received data:', sensorData);
 
-  socket.on('raspberry-pi-data', (data) => {
-    console.log('Received sensor data:', data);
-    // Process the sensor data and store it, if needed
-    io.emit('sensor-data', data);
-  });
-
-  setInterval(() => {
-    socket.emit('server-command', { action: 'update_led', state: 'on' });
-  }, 5000);
+  res.json(sensorData);
 });
 
-http.listen(port, () => {
-  console.log('Server listening on port 3000');
+app.get('/api/data', (req, res) => {
+
+  res.json(sensorData);
+});
+
+const server = app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+// Set up Socket.IO for real-time communication
+const io = require('socket.io')(server);
+
+io.on('connection', (socket) => {
+  console.log('A client connected');
 });
