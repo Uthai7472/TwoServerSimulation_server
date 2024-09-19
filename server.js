@@ -1,49 +1,38 @@
 const express = require('express');
-const app = express();
+const http = require('http');
+const socketIo = require('socket.io');
 const cors = require('cors');
-const port = 3000;
 
-let sensorData;
-let command1, command2;
+const app = express();
+const server = http.createServer(app);
 
-// Middleware to parse JSON data
-app.use(express.json());
+// Configure CORS for Socket.IO
+const io = socketIo(server, {
+    cors: {
+        origin: 'http://localhost:5173', // Replace with your React app's URL
+        methods: ['GET', 'POST'], // Specify allowed methods
+        credentials: true // Allow credentials if needed
+    }
+});
+
+// Use CORS middleware for Express routes
 app.use(cors());
 
-app.post('/api/data', (req, res) => {
-  sensorData = req.body;
-  console.log('Received data:', sensorData);
-
-  res.json(sensorData);
-});
-
-app.get('/api/data', (req, res) => {
-
-  res.json(sensorData);
-});
-
-// Get command from client
-app.post('/api/command', (req, res) => {
-  command1 = req.body.command[0];
-  command2 = req.body.command[1];
-
-  console.log('Received command from client:', command1);
-  console.log('Received command from client:', command2);
-
-  const response = {message: 'Command from client received'};
-  res.json(response);
-});
-app.get('/api/command', (req, res) => {
-  res.json({command1: command1, command2: command2});
-});
-
-const server = app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-
-// Set up Socket.IO for real-time communication
-const io = require('socket.io')(server);
-
 io.on('connection', (socket) => {
-  console.log('A client connected');
+    console.log('A client connected');
+
+    socket.on('data', (data) => {
+        console.log('Data received from Raspberry Pi:', data);
+        // Emit data to all connected clients
+        io.emit('update', data);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('A client disconnected');
+    });
+});
+
+const PORT = 3000;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
