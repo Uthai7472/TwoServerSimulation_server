@@ -9,14 +9,18 @@ const server = http.createServer(app);
 // Configure CORS for Socket.IO
 const io = socketIo(server, {
     cors: {
-        origin: ['http://localhost:5173', 'https://two-server-simulation-client.vercel.app'], // Replace with your React app's URL
+        origin: ['http://localhost:5173', 'https://two-server-simulation-client.vercel.app'], // Allow both local and production React app
         methods: ['GET', 'POST'], // Specify allowed methods
         credentials: true // Allow credentials if needed
     }
 });
 
 // Use CORS middleware for Express routes
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173', 'https://two-server-simulation-client.vercel.app'], // Same origins as above
+    methods: ['GET', 'POST'], // Specify allowed methods
+    credentials: true // Allow credentials if needed
+}));
 
 io.on('connection', (socket) => {
     console.log('A client connected');
@@ -32,7 +36,7 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = 3000 || process.env.PORT;
+const PORT = process.env.PORT || 3000; // Corrected the way to set PORT
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
