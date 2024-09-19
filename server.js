@@ -9,7 +9,7 @@ const server = http.createServer(app);
 // Configure CORS for Socket.IO
 const io = socketIo(server, {
     cors: {
-        origin: 'http://localhost:5173', // Replace with your React app's URL
+        origin: ['http://localhost:5173', 'https://two-server-simulation-client.vercel.app'], // Replace with your React app's URL
         methods: ['GET', 'POST'], // Specify allowed methods
         credentials: true // Allow credentials if needed
     }
