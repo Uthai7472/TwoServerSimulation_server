@@ -1,36 +1,77 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
-const server = http.createServer(app);
+const PORT = 3000;
 
-// Enable CORS for Socket.IO
-const io = new Server(server, {
-    cors: {
-        origin: 'https://two-server-simulation-client.vercel.app', // Replace with your client's URL
-        methods: ["GET", "POST"]
-    }
-});
-
+app.use(bodyParser.json());
 app.use(cors());
-app.use(express.json());
 
-io.on('connection', (socket) => {
-    console.log('A user connected');
+const devices = {};
+let monitorDeviceId = {};
+let storedValues = []; 
 
-    socket.on('message', (msg) => {
-        console.log('Message received: ' + msg);
-        // Broadcast the message to all connected clients
-        io.emit('message', msg);
-    });
+app.post('/api/devices/register', (req, res) => {
+  const { deviceId, deviceName, deviceType } = req.body;
+  if (!deviceId || devices[deviceId]) {
+    console.log(devices);
+    return res.status(400).json({ error: 'Invalid or duplicate device ID' });
+  }
 
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
+  devices[deviceId] = { deviceName, deviceType, status:'offline' };
+  console.log(devices);
+  res.status(201).json({ message: 'Device registered successfully '});
+  
 });
 
-server.listen(3000, () => {
-    console.log('Public server is running on port 3000');
+app.post('/api/devices/:deviceId/control', (req, res) => {
+  const {deviceId} = req.params;
+  const {command} = req.body;
+
+  if (!devices[deviceId]) {
+    return res.status(404).json({ error: 'Device not found' });
+  }
+
+  console.log(`Executing command "${command}" on device ${deviceId}`)
+  devices[deviceId].status = 'active';
+  devices[deviceId].lastCommand = command;
+
+  res.json({ message: `Command executed on device ${deviceId}`});
 });
+
+app.get('/api/devices/:deviceId/control', (req, res) => {
+  const {deviceId} = req.params;
+
+  if (!devices[deviceId]) {
+    console.log('Device not found');
+    return res.status(404).json({ error: 'Device not found' });
+  }
+
+  // console.log({deviceId, status: devices[deviceId].status, lastCommand: devices[deviceId].lastCommand})
+  res.json({ deviceId, status: devices[deviceId].status, lastCommand: devices[deviceId].lastCommand });
+});
+
+app.post('/api/devices/:monitorDeviceId/monitor', (req, res) => {
+  monitorDeviceId = req.params;
+  const {values} = req.body;
+
+  storedValues = values;
+
+  console.log(`Values: ${values}`);
+  res.status(201).json({ message: 'Value from Raspi send to server' });
+  
+});
+
+app.get('/api/devices/:deviceId/monitor', (req, res) => {
+  const {deviceId} = req.params;
+
+  res.status(200).json({ deviceId, values: storedValues });
+  
+});
+
+
+app.listen(PORT, () => {
+  console.log(`Server is running on http:localhost:${PORT}`);
+})
+
