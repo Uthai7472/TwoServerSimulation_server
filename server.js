@@ -9,7 +9,7 @@ const server = http.createServer(app);
 // Enable CORS for Socket.IO
 const io = new Server(server, {
     cors: {
-        origin: '*', // Replace with your client's URL
+        origin: 'https://two-server-simulation-client.vercel.app', // Replace with your client's URL
         methods: ["GET", "POST"],
         allowedHeaders: ["my-custom-header"],
         credentials: true
