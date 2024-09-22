@@ -10,9 +10,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: 'https://two-server-simulation-client.vercel.app', // Replace with your client's URL
-        methods: ["GET", "POST"],
-        allowedHeaders: ["my-custom-header"],
-        credentials: true
+        methods: ["GET", "POST"]
     }
 });
 
